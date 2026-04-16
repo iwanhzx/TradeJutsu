@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+.venv/
+venv/
+
+# Database files
+backend/database/*.duckdb
+backend/database/*.duckdb.wal
+backend/database/*.sqlite
+backend/database/*.sqlite-wal
+backend/database/*.sqlite-shm
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node (for frontend later)
+node_modules/
+frontend/dist/
+
+# Brainstorm artifacts
+.superpowers/
+
+# Env
+.env
+.env.local
