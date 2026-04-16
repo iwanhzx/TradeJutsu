@@ -37,9 +37,18 @@ def setup_logging() -> None:
                     "backupCount": 3,
                     "encoding": "utf-8",
                 },
+                "error_file": {
+                    "class": "logging.handlers.RotatingFileHandler",
+                    "level": "ERROR",
+                    "formatter": "standard",
+                    "filename": str(log_dir / "error.log"),
+                    "maxBytes": 5_000_000,
+                    "backupCount": 3,
+                    "encoding": "utf-8",
+                },
             },
             "loggers": {
-                "yfinance": {"level": "WARNING"},
+                "yfinance": {"level": "CRITICAL"},
                 "urllib3": {"level": "WARNING"},
                 "httpcore": {"level": "WARNING"},
                 "httpx": {"level": "WARNING"},
@@ -48,7 +57,7 @@ def setup_logging() -> None:
             },
             "root": {
                 "level": "DEBUG" if settings.debug else "INFO",
-                "handlers": ["console", "file"],
+                "handlers": ["console", "file", "error_file"],
             },
         }
     )

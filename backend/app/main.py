@@ -60,10 +60,12 @@ app.include_router(analytics_router)
 
 access_logger = logging.getLogger("tradejutsu.access")
 
+_QUIET_PATHS = {f"{settings.api_prefix}/health", f"{settings.api_prefix}/jobs"}
+
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
-    if request.url.path == f"{settings.api_prefix}/health":
+    if request.url.path in _QUIET_PATHS:
         return await call_next(request)
     start = time.perf_counter()
     response = await call_next(request)
