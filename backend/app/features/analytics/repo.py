@@ -33,6 +33,22 @@ async def get_daily_turnover(symbol: str, days: int) -> float | None:
     return None
 
 
+async def get_turnover_table(symbols: list[str]) -> pl.DataFrame:
+    if not symbols:
+        return pl.DataFrame()
+    placeholders = ", ".join("?" for _ in symbols)
+    query = f"""
+        SELECT symbol, date, turnover FROM (
+            SELECT symbol, date, turnover,
+                   ROW_NUMBER() OVER (PARTITION BY symbol ORDER BY date DESC) as rn
+            FROM prices_daily
+            WHERE symbol IN ({placeholders})
+        ) WHERE rn <= 132
+        ORDER BY symbol, date DESC
+    """
+    return await db.read_polars(query, symbols)
+
+
 async def get_prices_for_atr(
     symbol: str, interval: str, limit_days: int
 ) -> pl.DataFrame:

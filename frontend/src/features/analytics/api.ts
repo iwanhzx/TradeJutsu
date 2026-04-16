@@ -1,5 +1,5 @@
 import { api } from "../../shared/lib/httpClient";
-import type { AtrSummaryResponse, TurnoverItem, WtdReportItem, JobCreated } from "../../shared/types/api";
+import type { AtrSummaryResponse, TurnoverTableResponse, WtdReportItem, WtdSettings, JobCreated } from "../../shared/types/api";
 
 export const analyticsApi = {
   getAtrSummary: (interval?: string, symbol?: string) => {
@@ -9,12 +9,10 @@ export const analyticsApi = {
     const qs = params.toString();
     return api.get<AtrSummaryResponse[]>(`/analytics/atr/summary${qs ? `?${qs}` : ""}`);
   },
-  calculateAtr: (interval: string) => api.post<JobCreated>(`/analytics/atr/calculate/${interval}`),
-  getTurnover: (days = 7, symbol?: string) => {
-    const params = new URLSearchParams({ days: String(days) });
-    if (symbol) params.set("symbol", symbol);
-    return api.get<TurnoverItem[]>(`/analytics/turnover?${params}`);
-  },
+  calculateAtr: () => api.post<JobCreated>("/analytics/atr/calculate"),
+  getTurnoverTable: () => api.get<TurnoverTableResponse>("/analytics/turnover"),
   getWtdReport: () => api.get<WtdReportItem[]>("/analytics/wtd/report"),
   checkWtd: () => api.post<JobCreated>("/analytics/wtd/check"),
+  getWtdSettings: () => api.get<WtdSettings>("/analytics/wtd/settings"),
+  saveWtdSettings: (settings: WtdSettings) => api.put<WtdSettings>("/analytics/wtd/settings", settings),
 };

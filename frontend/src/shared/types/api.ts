@@ -72,20 +72,36 @@ export interface JobCreated {
 export interface AtrSummaryResponse {
   symbol: string;
   interval: string;
-  period_days: number;
+  period_days: string;
   atr_wilder: number | null;
   atr_pct_wilder: number | null;
   atr_with_open: number | null;
   atr_pct_with_open: number | null;
   atr_exclude_open: number | null;
   atr_pct_exclude_open: number | null;
+  last_price_update: string | null;
   calculated_at: string | null;
 }
 
 export interface TurnoverItem {
   symbol: string;
   avg_turnover: number | null;
-  period_days: number;
+  period_days: string;
+}
+
+export interface TurnoverTableRow {
+  symbol: string;
+  daily_values: Record<string, number | null>;
+  avg_1w: number | null;
+  avg_2w: number | null;
+  avg_1m: number | null;
+  avg_3m: number | null;
+  avg_6m: number | null;
+}
+
+export interface TurnoverTableResponse {
+  trade_dates: string[];
+  rows: TurnoverTableRow[];
 }
 
 export interface WtdReportItem {
@@ -93,11 +109,38 @@ export interface WtdReportItem {
   is_worth_trade_daily: boolean;
   turnover_1w: number | null;
   turnover_2w: number | null;
-  atr_1h_1w_pass: boolean;
-  atr_1h_2w_pass: boolean;
-  atr_daily_1w_pass: boolean;
-  atr_daily_2w_pass: boolean;
+  c_1w_o_daily: boolean;
+  c_1w_opct_1h: boolean;
+  c_1w_opct_daily: boolean;
+  c_2w_opct_1h: boolean;
+  c_2w_opct_daily: boolean;
   atr_conditions_met: number;
+}
+
+export interface WtdSettings {
+  turnover_min: number;
+  min_1w_o_daily: number;
+  min_1w_opct_1h: number;
+  min_1w_opct_daily: number;
+  min_2w_opct_1h: number;
+  min_2w_opct_daily: number;
+  conditions_to_pass: number;
+}
+
+// === Cron Jobs ===
+export interface CronScheduleResponse {
+  action_id: string;
+  label: string;
+  enabled: boolean;
+  run_time: string;
+  last_run_at: string | null;
+  last_job_id: string | null;
+  next_run_at: string | null;
+}
+
+export interface CronScheduleUpdate {
+  enabled?: boolean;
+  run_time?: string;
 }
 
 // === WebSocket Messages ===

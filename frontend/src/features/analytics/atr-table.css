@@ -1,0 +1,109 @@
+.atr-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #334155;
+  border-radius: 0 8px 8px 8px;
+}
+
+.atr-table {
+  border-collapse: collapse;
+  font-size: 12px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  white-space: nowrap;
+  min-width: 100%;
+}
+
+/* Header base */
+.atr-table thead th {
+  background: #1e293b;
+  color: #94a3b8;
+}
+
+/* Row 1: Period headers */
+.atr-table .atr-period {
+  padding: 5px 8px;
+  text-align: center;
+  border-bottom: 1px solid #475569;
+  color: #cbd5e1;
+}
+
+/* Row 2: Metric headers */
+.atr-table .atr-metric {
+  padding: 3px 6px;
+  text-align: center;
+  border-bottom: 1px solid #475569;
+  font-size: 11px;
+}
+.atr-table .atr-metric-w { color: #34d399; }
+.atr-table .atr-metric-o { color: #fbbf24; }
+.atr-table .atr-metric-x { color: #f472b6; }
+
+/* Row 3: Interval headers */
+.atr-table .atr-interval {
+  padding: 3px 6px;
+  text-align: center;
+  border-bottom: 2px solid #475569;
+  font-size: 10px;
+  color: #64748b;
+}
+
+/* Symbol header */
+.atr-table .atr-symbol-hdr {
+  padding: 8px 12px;
+  text-align: left;
+  position: sticky;
+  left: 0;
+  background: #1e293b;
+  z-index: 2;
+  min-width: 90px;
+  border-bottom: 2px solid #475569;
+  border-right: 2px solid #475569;
+}
+
+/* Borders: thin metric separator, thick period separator */
+.atr-table .atr-msep { border-right: 1px solid #334155; }
+.atr-table .atr-psep { border-right: 2px solid #475569; }
+.atr-table .atr-last { border-right: 1px solid #334155; }
+
+/* Data cells */
+.atr-table td {
+  padding: 5px 7px;
+  text-align: right;
+  color: #cbd5e1;
+}
+
+.atr-table .atr-symbol {
+  padding: 6px 12px;
+  text-align: left;
+  color: #e2e8f0;
+  font-weight: 600;
+  position: sticky;
+  left: 0;
+  background: #0f172a;
+  z-index: 1;
+  border-right: 2px solid #475569;
+}
+
+.atr-table tbody tr {
+  border-bottom: 1px solid #1e293b;
+}
+
+.atr-table .atr-na {
+  color: #475569;
+}
+
+/* Clickable symbol */
+.atr-table .atr-symbol-link {
+  cursor: pointer;
+}
+.atr-table .atr-symbol-link:hover {
+  color: #60a5fa;
+  text-decoration: underline;
+}
+
+/* Hover highlight */
+.atr-table .atr-highlight {
+  background: #1e3a5f !important;
+}
+.atr-table td.atr-symbol.atr-highlight {
+  background: #1e3a5f !important;
+}

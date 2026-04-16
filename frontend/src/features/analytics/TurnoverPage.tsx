@@ -1,45 +1,84 @@
-import { useState, useMemo } from "react";
-import { AgGridReact } from "ag-grid-react";
-import type { ColDef } from "ag-grid-community";
-import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
-import { useTurnover } from "./hooks";
+import { useMemo } from "react";
+import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
+import { DataTable } from "../../shared/components/DataTable";
+import { useTurnoverTable } from "./hooks";
 import { LoadingSpinner } from "../../shared/components/LoadingSpinner";
-import type { TurnoverItem } from "../../shared/types/api";
 
-ModuleRegistry.registerModules([AllCommunityModule]);
+type TurnoverRow = Record<string, unknown>;
 
-const PERIOD_OPTIONS = [
-  { label: "1W", days: 5 }, { label: "2W", days: 10 },
-  { label: "1M", days: 22 }, { label: "3M", days: 66 }, { label: "6M", days: 132 },
-];
+const fmtTurnover = (v: unknown) =>
+  v != null ? `Rp ${(Number(v) / 1_000_000_000).toFixed(1)}B` : "-";
+
+const col = createColumnHelper<TurnoverRow>();
 
 export function TurnoverPage() {
-  const [days, setDays] = useState(5);
-  const { data, isLoading } = useTurnover(days);
+  const { data, isLoading } = useTurnoverTable();
 
-  const columnDefs = useMemo<ColDef<TurnoverItem>[]>(() => [
-    { field: "symbol", width: 120, sortable: true, filter: true },
-    { field: "avg_turnover", headerName: "Avg Daily Turnover (IDR)", flex: 1, sortable: true,
-      valueFormatter: (p) => p.value != null ? `Rp ${(Number(p.value) / 1_000_000_000).toFixed(1)}B` : "-" },
-  ], []);
+  const rowData = useMemo(() => {
+    if (!data) return [];
+    return data.rows.map((row) => ({
+      symbol: row.symbol,
+      ...row.daily_values,
+      avg_1w: row.avg_1w,
+      avg_2w: row.avg_2w,
+      avg_1m: row.avg_1m,
+      avg_3m: row.avg_3m,
+      avg_6m: row.avg_6m,
+    }));
+  }, [data]);
+
+  const columns = useMemo<ColumnDef<TurnoverRow, unknown>[]>(() => {
+    if (!data) return [];
+
+    const symbolCol = col.accessor("symbol", {
+      header: "Symbol",
+      size: 100,
+      cell: (c) => {
+        const val = c.getValue() as string;
+        return (
+          <span
+            className="cursor-pointer text-blue-400 hover:text-blue-300"
+            onClick={() => window.open(`/prices/${encodeURIComponent(val)}`, "_blank")}
+          >
+            {val ? String(val).replace(".JK", "") : ""}
+          </span>
+        );
+      },
+    });
+
+    const dateColumns = [...data.trade_dates].reverse().map((dateStr) =>
+      col.accessor(dateStr, {
+        header: dateStr,
+        size: 110,
+        meta: { align: "right" },
+        cell: (c) => fmtTurnover(c.getValue()),
+      })
+    );
+
+    const avgFields = [
+      { field: "avg_1w", header: "1W Avg" },
+      { field: "avg_2w", header: "2W Avg" },
+      { field: "avg_1m", header: "1M Avg" },
+      { field: "avg_3m", header: "3M Avg" },
+      { field: "avg_6m", header: "6M Avg" },
+    ];
+    const avgColumns = avgFields.map(({ field, header }) =>
+      col.accessor(field, {
+        header,
+        size: 110,
+        meta: { align: "right" },
+        cell: (c) => fmtTurnover(c.getValue()),
+      })
+    );
+
+    return [symbolCol, ...dateColumns, ...avgColumns];
+  }, [data]);
 
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Daily Turnover</h2>
-      <div className="flex gap-2 mb-4">
-        {PERIOD_OPTIONS.map((opt) => (
-          <button key={opt.days} onClick={() => setDays(opt.days)}
-            className={`px-3 py-1.5 rounded text-sm ${days === opt.days ? "bg-blue-600 text-white" : "bg-slate-700 text-slate-300 hover:bg-slate-600"}`}>
-            {opt.label}
-          </button>
-        ))}
-      </div>
       {isLoading && <LoadingSpinner />}
-      {data && (
-        <div className="ag-theme-alpine-dark" style={{ height: 600 }}>
-          <AgGridReact<TurnoverItem> rowData={data} columnDefs={columnDefs} defaultColDef={{ resizable: true }} animateRows />
-        </div>
-      )}
+      {data && <DataTable data={rowData} columns={columns} pinnedColumns={["symbol"]} />}
     </div>
   );
 }

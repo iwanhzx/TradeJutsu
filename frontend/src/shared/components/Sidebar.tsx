@@ -18,6 +18,7 @@ const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
   ]},
   { title: "System", items: [
     { label: "Jobs & Tasks", path: "/jobs" },
+    { label: "Cron Jobs", path: "/cron-jobs" },
   ]},
 ];
 

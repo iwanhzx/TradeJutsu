@@ -6,9 +6,10 @@ Wilder's:
 """
 
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import polars as pl
+from dateutil.relativedelta import relativedelta
 
 from app.features.analytics import repo
 from app.features.symbols import repo as symbols_repo
@@ -17,7 +18,16 @@ from app.core.background import notify_data_updated
 
 logger = logging.getLogger(__name__)
 
-ATR_PERIODS = [1, 7, 14, 30, 90, 180]
+ATR_PERIODS = [
+    ("1day", timedelta(days=1)),
+    ("1week", timedelta(days=7)),
+    ("2week", timedelta(days=14)),
+    ("1month", relativedelta(months=1)),
+    ("3month", relativedelta(months=3)),
+    ("6month", relativedelta(months=6)),
+]
+
+MAX_FETCH_OFFSET = relativedelta(months=6, days=10)
 
 
 def compute_wilder_atr(true_ranges: list[float], period: int) -> list[float]:
@@ -51,7 +61,7 @@ async def calculate_atr(interval: str) -> None:
     for sym in active:
         symbol = sym["symbol"]
         try:
-            prices = await repo.get_prices_for_atr(symbol, interval, max(ATR_PERIODS) + 10)
+            prices = await repo.get_prices_for_atr(symbol, interval, 200)
 
             if len(prices) == 0:
                 continue
@@ -64,45 +74,67 @@ async def calculate_atr(interval: str) -> None:
             tr_values = prices["true_range"].drop_nulls().to_list()
             tr_pct_values = prices["true_range_pct"].drop_nulls().to_list()
 
-            for period in ATR_PERIODS:
-                if len(tr_values) < period:
+            # Pre-compute date column and opening bar info
+            if interval == "daily":
+                date_col = prices["date"]
+                latest_date = date_col.max()
+            else:
+                prices_with_date = prices.with_columns(
+                    pl.col("datetime").cast(pl.Date).alias("_date")
+                )
+                date_col = prices_with_date["_date"]
+                latest_date = date_col.max()
+                first_bars = prices_with_date.group_by("_date").agg(
+                    pl.col("datetime").min().alias("first_dt")
+                )
+                first_dts = set(first_bars["first_dt"].to_list())
+
+            for period_key, offset in ATR_PERIODS:
+                # Filter by calendar date range
+                cutoff_date = latest_date - offset
+                if interval == "daily":
+                    recent_prices = prices.filter(pl.col("date") > cutoff_date)
+                else:
+                    recent_prices = prices.filter(date_col > cutoff_date)
+
+                recent_tr = recent_prices["true_range"].drop_nulls().to_list()
+                recent_tr_pct = recent_prices["true_range_pct"].drop_nulls().to_list()
+
+                if not recent_tr:
                     continue
 
-                wilder_values = compute_wilder_atr(tr_values, period)
-                wilder_pct_values = compute_wilder_atr(tr_pct_values, period)
+                wilder_period = len(recent_tr)
+                wilder_values = compute_wilder_atr(tr_values, wilder_period)
+                wilder_pct_values = compute_wilder_atr(tr_pct_values, wilder_period)
                 atr_wilder = wilder_values[-1] if wilder_values else None
                 atr_pct_wilder = wilder_pct_values[-1] if wilder_pct_values else None
 
-                recent_tr = tr_values[-period:]
-                recent_tr_pct = tr_pct_values[-period:]
                 atr_with_open = sum(recent_tr) / len(recent_tr)
                 atr_pct_with_open = sum(recent_tr_pct) / len(recent_tr_pct)
 
                 atr_exclude_open = atr_with_open
                 atr_pct_exclude_open = atr_pct_with_open
 
-                if interval != "daily" and "datetime" in prices.columns:
-                    prices_with_date = prices.with_columns(
-                        pl.col("datetime").cast(pl.Date).alias("_date")
-                    )
-                    first_bars = prices_with_date.group_by("_date").agg(
-                        pl.col("datetime").min().alias("first_dt")
-                    )
-                    first_dts = set(first_bars["first_dt"].to_list())
+                if interval != "daily":
                     mask = [dt not in first_dts for dt in prices["datetime"].to_list()]
                     filtered = prices.filter(pl.Series(mask))
+                    filtered_with_date = filtered.with_columns(
+                        pl.col("datetime").cast(pl.Date).alias("_date")
+                    )
+                    filtered_recent = filtered_with_date.filter(
+                        pl.col("_date") > cutoff_date
+                    )
 
-                    if len(filtered) >= period:
-                        tr_no_ob = filtered["true_range"].drop_nulls().to_list()[-period:]
-                        tr_pct_no_ob = filtered["true_range_pct"].drop_nulls().to_list()[-period:]
-                        if tr_no_ob:
-                            atr_exclude_open = sum(tr_no_ob) / len(tr_no_ob)
-                            atr_pct_exclude_open = sum(tr_pct_no_ob) / len(tr_pct_no_ob)
+                    tr_no_ob = filtered_recent["true_range"].drop_nulls().to_list()
+                    tr_pct_no_ob = filtered_recent["true_range_pct"].drop_nulls().to_list()
+                    if tr_no_ob:
+                        atr_exclude_open = sum(tr_no_ob) / len(tr_no_ob)
+                        atr_pct_exclude_open = sum(tr_pct_no_ob) / len(tr_pct_no_ob)
 
                 results.append({
                     "symbol": symbol,
                     "interval": interval if interval != "daily" else "daily",
-                    "period_days": period,
+                    "period_days": period_key,
                     "atr_wilder": round(atr_wilder, 4) if atr_wilder else None,
                     "atr_pct_wilder": round(atr_pct_wilder, 4) if atr_pct_wilder else None,
                     "atr_with_open": round(atr_with_open, 4),
@@ -123,11 +155,13 @@ async def calculate_atr(interval: str) -> None:
         await notify_data_updated("atr_summary")
 
 
-async def calculate_atr_background(interval: str, job_id: str) -> None:
+async def calculate_all_atr_background(job_id: str) -> None:
     try:
-        await jobs_service.update_progress(job_id, 0, 1)
-        await calculate_atr(interval)
+        await jobs_service.update_progress(job_id, 0, 2)
+        await calculate_atr("1hour")
+        await jobs_service.update_progress(job_id, 1, 2)
+        await calculate_atr("daily")
         await jobs_service.complete_job(job_id)
     except Exception as e:
-        logger.exception(f"ATR calculation failed for {interval}")
+        logger.exception("ATR calculation failed")
         await jobs_service.fail_job(job_id, str(e))

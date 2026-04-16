@@ -66,7 +66,7 @@ async def get_job(job_id: str) -> dict | None:
         return dict(row)
 
 
-async def get_jobs(limit: int = 50) -> list[dict]:
+async def get_jobs(limit: int = 30) -> list[dict]:
     async with get_db() as db:
         cursor = await db.execute(
             "SELECT * FROM jobs ORDER BY created_at DESC LIMIT ?", (limit,)

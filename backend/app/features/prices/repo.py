@@ -34,5 +34,9 @@ async def upsert_daily(df: pl.DataFrame) -> None:
     await db.write_polars("prices_daily", df)
 
 
+async def delete_intraday(symbol: str, interval: str) -> None:
+    await db.write("DELETE FROM prices_intraday WHERE symbol = ? AND interval = ?", [symbol, interval])
+
+
 async def upsert_intraday(df: pl.DataFrame) -> None:
     await db.write_polars("prices_intraday", df)

@@ -165,7 +165,7 @@ def init_schema() -> None:
             CREATE TABLE IF NOT EXISTS atr_summary (
                 symbol VARCHAR NOT NULL,
                 interval VARCHAR NOT NULL,
-                period_days INTEGER NOT NULL,
+                period_days VARCHAR NOT NULL,
                 atr_wilder DOUBLE,
                 atr_pct_wilder DOUBLE,
                 atr_with_open DOUBLE,

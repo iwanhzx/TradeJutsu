@@ -6,6 +6,7 @@ WAL mode enabled for concurrent read/write.
 
 import logging
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from typing import AsyncGenerator
 
 import aiosqlite
@@ -78,6 +79,52 @@ async def init_schema() -> None:
                 updated_at TEXT NOT NULL
             )
         """)
+
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS cron_schedules (
+                action_id   TEXT PRIMARY KEY,
+                label       TEXT NOT NULL,
+                enabled     INTEGER DEFAULT 0,
+                run_time    TEXT NOT NULL,
+                last_run_at TEXT,
+                last_job_id TEXT,
+                created_at  TEXT NOT NULL,
+                updated_at  TEXT NOT NULL
+            )
+        """)
+
+        # Seed default cron schedules
+        now = datetime.now(timezone.utc).isoformat()
+        await db.execute(
+            "INSERT OR IGNORE INTO cron_schedules (action_id, label, enabled, run_time, created_at, updated_at) "
+            "VALUES (?, ?, 0, '06:00', ?, ?)",
+            ("atr_calculate", "Calculate ATR", now, now),
+        )
+        await db.execute(
+            "INSERT OR IGNORE INTO cron_schedules (action_id, label, enabled, run_time, created_at, updated_at) "
+            "VALUES (?, ?, 0, '06:00', ?, ?)",
+            ("wtd_check", "WTD Check", now, now),
+        )
+        await db.execute(
+            "INSERT OR IGNORE INTO cron_schedules (action_id, label, enabled, run_time, created_at, updated_at) "
+            "VALUES (?, ?, 0, '07:00', ?, ?)",
+            ("fetch_daily", "Fetch All Daily", now, now),
+        )
+        await db.execute(
+            "INSERT OR IGNORE INTO cron_schedules (action_id, label, enabled, run_time, created_at, updated_at) "
+            "VALUES (?, ?, 0, '07:00', ?, ?)",
+            ("fetch_1hour", "Fetch All 1H", now, now),
+        )
+        await db.execute(
+            "INSERT OR IGNORE INTO cron_schedules (action_id, label, enabled, run_time, created_at, updated_at) "
+            "VALUES (?, ?, 0, '07:00', ?, ?)",
+            ("fetch_30min", "Fetch All 30M", now, now),
+        )
+        await db.execute(
+            "INSERT OR IGNORE INTO cron_schedules (action_id, label, enabled, run_time, created_at, updated_at) "
+            "VALUES (?, ?, 0, '07:00', ?, ?)",
+            ("fetch_15min", "Fetch All 15M", now, now),
+        )
 
         await db.commit()
 

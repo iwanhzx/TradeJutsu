@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import time
 from contextlib import asynccontextmanager
@@ -25,6 +26,8 @@ from app.features.jobs.router import router as jobs_router, ws_router  # noqa: E
 from app.features.symbols.router import router as symbols_router  # noqa: E402
 from app.features.prices.router import router as prices_router  # noqa: E402
 from app.features.analytics.router import router as analytics_router  # noqa: E402
+from app.features.cron_jobs.router import router as cron_jobs_router  # noqa: E402
+from app.features.cron_jobs.scheduler import start_scheduler  # noqa: E402
 
 
 @asynccontextmanager
@@ -34,7 +37,9 @@ async def lifespan(app: FastAPI):
     duckdb_manager.init_schema()
     await sqlite_manager.init_schema()
     logger.info("Database schemas initialized")
+    scheduler_task = asyncio.create_task(start_scheduler())
     yield
+    scheduler_task.cancel()
     logger.info("TradeJutsu shutting down")
 
 
@@ -53,6 +58,7 @@ app.include_router(ws_router)
 app.include_router(symbols_router)
 app.include_router(prices_router)
 app.include_router(analytics_router)
+app.include_router(cron_jobs_router)
 
 # ---------------------------------------------------------------------------
 # Request logging middleware

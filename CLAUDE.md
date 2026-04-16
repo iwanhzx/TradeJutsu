@@ -12,6 +12,7 @@ When a user mentions a URL path, go directly to the matching feature folder:
 | `/analytics/turnover` | `frontend/src/features/analytics/` | `backend/app/features/analytics/`   |
 | `/analytics/wtd`    | `frontend/src/features/analytics/`  | `backend/app/features/analytics/`   |
 | `/jobs`             | `frontend/src/features/jobs/`       | `backend/app/features/jobs/`        |
+| `/cron-jobs`        | `frontend/src/features/cron-jobs/`  | `backend/app/features/cron_jobs/`   |
 
 ## Feature folder conventions
 

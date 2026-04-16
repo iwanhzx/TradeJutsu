@@ -43,5 +43,5 @@ async def get_job(job_id: str) -> dict | None:
     return await repo.get_job(job_id)
 
 
-async def get_jobs(limit: int = 50) -> list[dict]:
-    return await repo.get_jobs(limit)
+async def get_jobs() -> list[dict]:
+    return await repo.get_jobs()

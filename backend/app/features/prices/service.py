@@ -37,20 +37,13 @@ ALL_INTERVALS = ["daily", "1hour", "30min", "15min"]
 
 
 def compute_true_range(df: pl.DataFrame) -> pl.DataFrame:
-    """Compute 3-way true range and true_range_pct.
+    """Compute true range and true_range_pct.
 
-    TR = max(H-L, |H-prevC|, |L-prevC|)
-    TR% = TR / prev_close * 100  (first row: TR / close * 100)
+    TR = High - Low
+    TR% = TR / Close * 100
     """
-    prev_close = df["close"].shift(1)
-    h_l = df["high"] - df["low"]
-    h_pc = (df["high"] - prev_close).abs()
-    l_pc = (df["low"] - prev_close).abs()
-
-    tr = pl.max_horizontal(h_l, h_pc, l_pc).fill_null(h_l)
-
-    denom = prev_close.fill_null(df["close"])
-    tr_pct = (tr / denom * 100).round(4)
+    tr = df["high"] - df["low"]
+    tr_pct = (tr / df["close"] * 100).round(4)
 
     return df.with_columns([
         tr.alias("true_range"),
@@ -59,13 +52,13 @@ def compute_true_range(df: pl.DataFrame) -> pl.DataFrame:
 
 
 def _fetch_yfinance_daily(symbol: str) -> pd.DataFrame:
-    return yf.download(symbol, period="1y", auto_adjust=True, progress=False)
+    return yf.download(symbol, period="1y", auto_adjust=False, progress=False)
 
 
 def _fetch_yfinance_intraday(symbol: str, interval: str) -> pd.DataFrame:
     yf_interval = INTERVAL_MAP.get(interval, interval)
     period = PERIOD_MAP.get(interval, "60d")
-    return yf.download(symbol, period=period, interval=yf_interval, auto_adjust=True, progress=False)
+    return yf.download(symbol, period=period, interval=yf_interval, auto_adjust=False, progress=False)
 
 
 async def fetch_daily(symbol: str) -> None:
@@ -157,6 +150,15 @@ async def fetch_intraday(symbol: str, interval: str) -> None:
         "true_range", "true_range_pct", "turnover",
     ])
 
+    # Drop fake closing bars: OHLC all equal and last bar of the day
+    flat = (pl.col("open") == pl.col("high")) & (pl.col("high") == pl.col("low")) & (pl.col("low") == pl.col("close"))
+    df = df.with_columns(pl.col("datetime").dt.date().alias("_date"))
+    max_dt = df.group_by("_date").agg(pl.col("datetime").max().alias("_max_dt"))
+    df = df.join(max_dt, on="_date", how="left")
+    df = df.filter(~(flat & (pl.col("datetime") == pl.col("_max_dt"))))
+    df = df.drop(["_date", "_max_dt"])
+
+    await repo.delete_intraday(symbol, interval)
     await repo.upsert_intraday(df)
     logger.info("Stored %d %s rows for %s", len(df), interval, symbol)
     await notify_data_updated("prices_intraday", symbol)
