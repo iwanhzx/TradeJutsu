@@ -8,6 +8,7 @@ from app.core import duckdb as duckdb_manager
 from app.core import sqlite as sqlite_manager
 from app.features.jobs.router import router as jobs_router, ws_router
 from app.features.symbols.router import router as symbols_router
+from app.features.prices.router import router as prices_router
 
 
 @asynccontextmanager
@@ -31,6 +32,7 @@ app.add_middleware(
 app.include_router(jobs_router)
 app.include_router(ws_router)
 app.include_router(symbols_router)
+app.include_router(prices_router)
 
 
 @app.get(f"{settings.api_prefix}/health")
