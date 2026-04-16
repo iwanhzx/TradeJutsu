@@ -17,5 +17,7 @@ export const pricesApi = {
   },
   fetchPrices: (symbol: string, interval: string) =>
     api.post<FetchResponse>(`/prices/${symbol}/fetch/${interval}`),
+  fetchAllIntervals: (symbol: string) =>
+    api.post<FetchResponse>(`/prices/${symbol}/fetch-all-intervals`),
   fetchAll: (interval: string) => api.post<FetchResponse>(`/prices/fetch-all/${interval}`),
 };

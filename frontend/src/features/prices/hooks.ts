@@ -21,6 +21,11 @@ export function useFetchPrices() {
       pricesApi.fetchPrices(symbol, interval),
   });
 }
+export function useFetchAllIntervals() {
+  return useMutation({
+    mutationFn: (symbol: string) => pricesApi.fetchAllIntervals(symbol),
+  });
+}
 export function useFetchAllPrices() {
   return useMutation({ mutationFn: (interval: string) => pricesApi.fetchAll(interval) });
 }
