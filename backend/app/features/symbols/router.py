@@ -1,7 +1,6 @@
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, Response
 
 from app.config import settings
-from app.core.errors import SymbolNotFoundError, SymbolAlreadyExistsError
 from app.features.symbols import service
 from app.features.symbols.models import SymbolCreate, SymbolResponse
 
@@ -16,46 +15,31 @@ async def list_symbols():
 
 @router.get("/{symbol}", response_model=SymbolResponse)
 async def get_symbol(symbol: str):
-    try:
-        s = await service.get_symbol(symbol.upper())
-    except SymbolNotFoundError:
-        raise HTTPException(status_code=404, detail=f"Symbol not found: {symbol}")
+    s = await service.get_symbol(symbol.upper())
     return _to_response(s)
 
 
 @router.post("", response_model=SymbolResponse, status_code=201)
 async def add_symbol(body: SymbolCreate):
-    try:
-        s = await service.add_symbol(body.symbol)
-    except SymbolAlreadyExistsError:
-        raise HTTPException(status_code=409, detail=f"Symbol already exists: {body.symbol}")
+    s = await service.add_symbol(body.symbol)
     return _to_response(s)
 
 
 @router.patch("/{symbol}/disable", response_model=SymbolResponse)
 async def disable_symbol(symbol: str):
-    try:
-        s = await service.disable_symbol(symbol.upper())
-    except SymbolNotFoundError:
-        raise HTTPException(status_code=404, detail=f"Symbol not found: {symbol}")
+    s = await service.disable_symbol(symbol.upper())
     return _to_response(s)
 
 
 @router.patch("/{symbol}/enable", response_model=SymbolResponse)
 async def enable_symbol(symbol: str):
-    try:
-        s = await service.enable_symbol(symbol.upper())
-    except SymbolNotFoundError:
-        raise HTTPException(status_code=404, detail=f"Symbol not found: {symbol}")
+    s = await service.enable_symbol(symbol.upper())
     return _to_response(s)
 
 
 @router.delete("/{symbol}", status_code=204)
 async def delete_symbol(symbol: str):
-    try:
-        await service.delete_symbol(symbol.upper())
-    except SymbolNotFoundError:
-        raise HTTPException(status_code=404, detail=f"Symbol not found: {symbol}")
+    await service.delete_symbol(symbol.upper())
     return Response(status_code=204)
 
 

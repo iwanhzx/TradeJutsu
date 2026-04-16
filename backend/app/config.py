@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     duckdb_path: Path = Path(__file__).parent.parent / "database" / "market.duckdb"
     sqlite_path: Path = Path(__file__).parent.parent / "database" / "app.sqlite"
 
+    # Logging
+    log_dir: Path = Path(__file__).parent.parent / "logs"
+
     # API
     api_prefix: str = "/api/v1"
 

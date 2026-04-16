@@ -29,6 +29,7 @@ class WebSocketManager:
             try:
                 await connection.send_text(text)
             except Exception:
+                logger.debug("WebSocket connection dropped during broadcast")
                 disconnected.append(connection)
         for conn in disconnected:
             self.active_connections.remove(conn)

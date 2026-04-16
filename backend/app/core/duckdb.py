@@ -6,6 +6,7 @@ Writes are serialized via asyncio.Lock.
 """
 
 import asyncio
+import logging
 from functools import partial
 from pathlib import Path
 
@@ -13,6 +14,8 @@ import duckdb
 import polars as pl
 
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 _write_lock = asyncio.Lock()
@@ -60,6 +63,7 @@ def _execute_write(query: str, params: list | None = None) -> None:
         conn.commit()
     except Exception:
         conn.rollback()
+        logger.error("DuckDB write failed: %s", query[:120])
         raise
     finally:
         conn.close()
@@ -73,6 +77,7 @@ def _execute_write_many(query: str, params_list: list[list]) -> None:
         conn.commit()
     except Exception:
         conn.rollback()
+        logger.error("DuckDB write_many failed: %s", query[:120])
         raise
     finally:
         conn.close()
@@ -87,6 +92,7 @@ def _execute_write_from_polars(table: str, df: pl.DataFrame) -> None:
         conn.commit()
     except Exception:
         conn.rollback()
+        logger.error("DuckDB polars write failed for table %s (%d rows)", table, len(df))
         raise
     finally:
         conn.close()
@@ -121,6 +127,7 @@ async def write_polars(table: str, df: pl.DataFrame) -> None:
 
 
 def init_schema() -> None:
+    logger.info("Initializing DuckDB schema at %s", _db_path)
     conn = _get_connection()
     try:
         conn.execute("""

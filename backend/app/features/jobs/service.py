@@ -1,3 +1,5 @@
+import logging
+
 from app.features.jobs import repo
 from app.core.background import (
     notify_job_started,
@@ -6,9 +8,12 @@ from app.core.background import (
     notify_job_error,
 )
 
+logger = logging.getLogger(__name__)
+
 
 async def create_job(job_type: str, symbol: str | None = None) -> str:
     job_id = await repo.create_job(job_type, symbol)
+    logger.info("Job created: %s (type=%s, symbol=%s)", job_id, job_type, symbol)
     await notify_job_started(job_id, job_type, symbol)
     return job_id
 
@@ -23,11 +28,13 @@ async def update_progress(job_id: str, completed: int, total: int, symbol: str |
 
 
 async def complete_job(job_id: str):
+    logger.info("Job completed: %s", job_id)
     await repo.update_job(job_id, status="done", progress=100)
     await notify_job_complete(job_id)
 
 
 async def fail_job(job_id: str, error: str):
+    logger.error("Job failed: %s - %s", job_id, error)
     await repo.update_job(job_id, status="failed", error=error)
     await notify_job_error(job_id, error)
 
