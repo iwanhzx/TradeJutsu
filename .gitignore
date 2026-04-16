@@ -21,9 +21,10 @@ backend/database/*.sqlite-shm
 .DS_Store
 Thumbs.db
 
-# Node (for frontend later)
+# Node
 node_modules/
 frontend/dist/
+package-lock.json
 
 # Brainstorm artifacts
 .superpowers/
