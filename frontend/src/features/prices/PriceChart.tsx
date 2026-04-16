@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { createChart, type IChartApi, type CandlestickData, type Time } from "lightweight-charts";
+import { createChart, CandlestickSeries, type IChartApi, type CandlestickData, type Time } from "lightweight-charts";
 import type { PriceDailyResponse } from "../../shared/types/api";
 
 interface Props { data: PriceDailyResponse[]; }
@@ -16,7 +16,7 @@ export function PriceChart({ data }: Props) {
       grid: { vertLines: { color: "#334155" }, horzLines: { color: "#334155" } },
       crosshair: { mode: 0 },
     });
-    const candleSeries = chart.addCandlestickSeries({
+    const candleSeries = chart.addSeries(CandlestickSeries, {
       upColor: "#22c55e", downColor: "#ef4444",
       borderUpColor: "#22c55e", borderDownColor: "#ef4444",
       wickUpColor: "#22c55e", wickDownColor: "#ef4444",
