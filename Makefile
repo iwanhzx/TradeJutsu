@@ -1,4 +1,4 @@
-.PHONY: dev backend test test-backend lint format seed clean
+.PHONY: dev backend frontend test test-backend lint format seed clean
 
 backend:
 	cd backend && uvicorn app.main:app --reload --port 8000
@@ -20,3 +20,9 @@ seed:
 clean:
 	rm -f backend/database/*.duckdb backend/database/*.duckdb.wal
 	rm -f backend/database/*.sqlite backend/database/*.sqlite-wal backend/database/*.sqlite-shm
+
+frontend:
+	cd frontend && npm run dev
+
+dev:
+	$(MAKE) backend & $(MAKE) frontend
