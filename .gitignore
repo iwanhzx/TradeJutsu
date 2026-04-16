@@ -28,6 +28,9 @@ frontend/dist/
 # Brainstorm artifacts
 .superpowers/
 
+# Claude Code
+.claude/
+
 # Env
 .env
 .env.local
