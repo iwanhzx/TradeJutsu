@@ -44,6 +44,19 @@ async def fetch_prices(symbol: str, interval: str, background_tasks: BackgroundT
     return FetchResponse(job_id=job_id)
 
 
+@router.post("/{symbol}/fetch-all-intervals", response_model=FetchResponse, status_code=202)
+async def fetch_all_intervals(symbol: str, background_tasks: BackgroundTasks):
+    symbol = symbol.upper()
+    try:
+        await symbols_service.get_symbol(symbol)
+    except SymbolNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Symbol not found: {symbol}")
+
+    job_id = await jobs_service.create_job("fetch_all_intervals", symbol)
+    background_tasks.add_task(service.fetch_all_intervals_background, symbol, job_id)
+    return FetchResponse(job_id=job_id)
+
+
 @router.post("/fetch-all/{interval}", response_model=FetchResponse, status_code=202)
 async def fetch_all(interval: str, background_tasks: BackgroundTasks):
     job_id = await jobs_service.create_job(f"fetch_all_{interval}")

@@ -4,7 +4,7 @@ import type { ColDef } from "ag-grid-community";
 import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
 import type { SymbolResponse } from "../../shared/types/api";
 import { useToggleSymbol, useDeleteSymbol } from "./hooks";
-import { useFetchPrices, useFetchAllPrices } from "../prices/hooks";
+import { useFetchAllIntervals, useFetchAllPrices } from "../prices/hooks";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -13,7 +13,7 @@ interface Props { symbols: SymbolResponse[]; }
 export function SymbolTable({ symbols }: Props) {
   const toggleMutation = useToggleSymbol();
   const deleteMutation = useDeleteSymbol();
-  const fetchMutation = useFetchPrices();
+  const fetchMutation = useFetchAllIntervals();
   const fetchAllMutation = useFetchAllPrices();
 
   const columnDefs = useMemo<ColDef<SymbolResponse>[]>(() => [
@@ -38,7 +38,7 @@ export function SymbolTable({ symbols }: Props) {
     { headerName: "Actions", width: 180,
       cellRenderer: (p: { data: SymbolResponse }) => (
         <div className="flex gap-2 items-center h-full">
-          <button onClick={() => fetchMutation.mutate({ symbol: p.data.symbol, interval: "daily" })}
+          <button onClick={() => fetchMutation.mutate(p.data.symbol)}
             className="text-xs text-blue-400 hover:text-blue-300">Fetch</button>
           <button onClick={() => { if (confirm(`Delete ${p.data.symbol}?`)) deleteMutation.mutate(p.data.symbol); }}
             className="text-xs text-red-400 hover:text-red-300">Delete</button>
@@ -56,6 +56,10 @@ export function SymbolTable({ symbols }: Props) {
         <button onClick={() => fetchAllMutation.mutate("1hour")} disabled={fetchAllMutation.isPending}
           className="px-3 py-1.5 bg-slate-600 text-white rounded text-sm hover:bg-slate-500 disabled:opacity-50">
           Fetch All 1H
+        </button>
+        <button onClick={() => fetchAllMutation.mutate("30min")} disabled={fetchAllMutation.isPending}
+          className="px-3 py-1.5 bg-slate-600 text-white rounded text-sm hover:bg-slate-500 disabled:opacity-50">
+          Fetch All 30M
         </button>
       </div>
       <div className="ag-theme-alpine-dark" style={{ height: 600 }}>

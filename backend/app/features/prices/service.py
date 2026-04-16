@@ -26,6 +26,15 @@ INTERVAL_MAP = {
     "1hour": "1h",
 }
 
+PERIOD_MAP = {
+    "daily": "1y",
+    "1hour": "730d",
+    "30min": "60d",
+    "15min": "60d",
+}
+
+ALL_INTERVALS = ["daily", "1hour", "30min", "15min"]
+
 
 def compute_true_range(df: pl.DataFrame) -> pl.DataFrame:
     """Compute 3-way true range and true_range_pct.
@@ -55,7 +64,8 @@ def _fetch_yfinance_daily(symbol: str) -> pd.DataFrame:
 
 def _fetch_yfinance_intraday(symbol: str, interval: str) -> pd.DataFrame:
     yf_interval = INTERVAL_MAP.get(interval, interval)
-    return yf.download(symbol, period="60d", interval=yf_interval, auto_adjust=True, progress=False)
+    period = PERIOD_MAP.get(interval, "60d")
+    return yf.download(symbol, period=period, interval=yf_interval, auto_adjust=True, progress=False)
 
 
 async def fetch_daily(symbol: str) -> None:
@@ -167,6 +177,27 @@ async def fetch_intraday_background(symbol: str, interval: str, job_id: str) -> 
         await jobs_service.complete_job(job_id)
     except Exception as e:
         logger.exception(f"Failed to fetch {interval} data for {symbol}")
+        await jobs_service.fail_job(job_id, str(e))
+
+
+async def fetch_all_intervals_background(symbol: str, job_id: str) -> None:
+    """Fetch all intervals (daily, 1h, 30m, 15m) for a single symbol."""
+    total = len(ALL_INTERVALS)
+    try:
+        for i, interval in enumerate(ALL_INTERVALS):
+            await jobs_service.update_progress(job_id, i, total, f"{symbol} ({interval})")
+            try:
+                if interval == "daily":
+                    await fetch_daily(symbol)
+                else:
+                    await fetch_intraday(symbol, interval)
+            except Exception as e:
+                logger.warning(f"Failed to fetch {interval} for {symbol}: {e}")
+            await jobs_service.update_progress(job_id, i + 1, total, f"{symbol} ({interval})")
+
+        await jobs_service.complete_job(job_id)
+    except Exception as e:
+        logger.exception(f"fetch_all_intervals failed for {symbol}")
         await jobs_service.fail_job(job_id, str(e))
 
 
