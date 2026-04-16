@@ -60,6 +60,7 @@ export interface JobResponse {
   error: string | null;
   created_at: string;
   updated_at: string;
+  completed_at: string | null;
 }
 
 export interface JobCreated {

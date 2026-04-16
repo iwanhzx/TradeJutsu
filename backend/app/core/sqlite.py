@@ -60,9 +60,16 @@ async def init_schema() -> None:
                 completed_items INTEGER DEFAULT 0,
                 error TEXT,
                 created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
+                updated_at TEXT NOT NULL,
+                completed_at TEXT
             )
         """)
+
+        # Migration: add completed_at to existing jobs table
+        cursor = await db.execute("PRAGMA table_info(jobs)")
+        cols = {row[1] for row in await cursor.fetchall()}
+        if "completed_at" not in cols:
+            await db.execute("ALTER TABLE jobs ADD COLUMN completed_at TEXT")
 
         await db.execute("""
             CREATE TABLE IF NOT EXISTS app_config (

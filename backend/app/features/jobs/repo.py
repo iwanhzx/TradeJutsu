@@ -32,6 +32,9 @@ async def update_job(
     if status is not None:
         updates.append("status = ?")
         params.append(status)
+        if status in ("done", "failed"):
+            updates.append("completed_at = ?")
+            params.append(now)
     if progress is not None:
         updates.append("progress = ?")
         params.append(progress)

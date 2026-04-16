@@ -7,6 +7,8 @@ export function JobProgressBar({ job }: Props) {
     pending: "bg-yellow-600", running: "bg-blue-600", done: "bg-green-600", failed: "bg-red-600",
   };
 
+  const fmtTime = (iso: string) => new Date(iso).toLocaleString();
+
   return (
     <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
       <div className="flex items-center justify-between mb-2">
@@ -17,7 +19,11 @@ export function JobProgressBar({ job }: Props) {
           <span className="text-sm font-medium">{job.job_type}</span>
           {job.symbol && <span className="text-sm text-slate-400">{job.symbol}</span>}
         </div>
-        <span className="text-xs text-slate-500">{new Date(job.created_at).toLocaleTimeString()}</span>
+      </div>
+      <div className="text-xs text-slate-500 font-mono select-all mb-2">{job.job_id}</div>
+      <div className="flex gap-4 text-xs text-slate-400 mb-2">
+        <span>Triggered: {fmtTime(job.created_at)}</span>
+        {job.completed_at && <span>Completed: {fmtTime(job.completed_at)}</span>}
       </div>
       {job.status === "running" && (
         <div className="mt-2">

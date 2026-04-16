@@ -187,6 +187,7 @@ async def fetch_intraday_background(symbol: str, interval: str, job_id: str) -> 
 async def fetch_all_intervals_background(symbol: str, job_id: str) -> None:
     """Fetch all intervals (daily, 1h, 30m, 15m) for a single symbol."""
     total = len(ALL_INTERVALS)
+    failed: list[str] = []
     try:
         for i, interval in enumerate(ALL_INTERVALS):
             await jobs_service.update_progress(job_id, i, total, f"{symbol} ({interval})")
@@ -197,9 +198,11 @@ async def fetch_all_intervals_background(symbol: str, job_id: str) -> None:
                     await fetch_intraday(symbol, interval)
             except Exception as e:
                 logger.warning(f"Failed to fetch {interval} for {symbol}: {e}")
+                failed.append(f"{symbol} ({interval})")
             await jobs_service.update_progress(job_id, i + 1, total, f"{symbol} ({interval})")
 
-        await jobs_service.complete_job(job_id)
+        error = f"Failed {len(failed)}/{total}: {', '.join(failed)}" if failed else None
+        await jobs_service.complete_job(job_id, error=error)
     except Exception as e:
         logger.exception(f"fetch_all_intervals failed for {symbol}")
         await jobs_service.fail_job(job_id, str(e))
@@ -210,6 +213,7 @@ async def fetch_all_background(interval: str, job_id: str) -> None:
         symbols = await symbols_repo.get_all()
         active = [s for s in symbols if s.get("is_active", True)]
         total = len(active)
+        failed: list[str] = []
 
         for i, sym in enumerate(active):
             symbol = sym["symbol"]
@@ -220,10 +224,12 @@ async def fetch_all_background(interval: str, job_id: str) -> None:
                     await fetch_intraday(symbol, interval)
             except Exception as e:
                 logger.warning(f"Failed to fetch {interval} for {symbol}: {e}")
+                failed.append(symbol)
 
             await jobs_service.update_progress(job_id, i + 1, total, symbol)
 
-        await jobs_service.complete_job(job_id)
+        error = f"Failed {len(failed)}/{total}: {', '.join(failed)}" if failed else None
+        await jobs_service.complete_job(job_id, error=error)
     except Exception as e:
         logger.exception(f"Bulk fetch failed for interval {interval}")
         await jobs_service.fail_job(job_id, str(e))

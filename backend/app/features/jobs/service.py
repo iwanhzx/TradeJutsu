@@ -27,9 +27,9 @@ async def update_progress(job_id: str, completed: int, total: int, symbol: str |
     await notify_job_progress(job_id, completed, total, symbol)
 
 
-async def complete_job(job_id: str):
+async def complete_job(job_id: str, error: str | None = None):
     logger.info("Job completed: %s", job_id)
-    await repo.update_job(job_id, status="done", progress=100)
+    await repo.update_job(job_id, status="done", progress=100, error=error)
     await notify_job_complete(job_id)
 
 

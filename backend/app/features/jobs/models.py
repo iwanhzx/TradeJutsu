@@ -12,6 +12,7 @@ class JobResponse(BaseModel):
     error: str | None = None
     created_at: str
     updated_at: str
+    completed_at: str | None = None
 
 
 class JobCreated(BaseModel):
