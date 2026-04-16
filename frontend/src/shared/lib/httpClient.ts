@@ -1,4 +1,7 @@
+import { createLogger } from "./logger";
+
 const API_BASE = "/api/v1";
+const log = createLogger("httpClient");
 
 class ApiError extends Error {
   status: number;
@@ -11,13 +14,22 @@ class ApiError extends Error {
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, {
-    headers: { "Content-Type": "application/json" },
-    ...options,
-  });
+  const method = options?.method || "GET";
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      headers: { "Content-Type": "application/json" },
+      ...options,
+    });
+  } catch (err) {
+    log.error("%s %s network error: %s", method, path, (err as Error).message);
+    throw err;
+  }
   if (!response.ok) {
     const body = await response.json().catch(() => ({ detail: response.statusText }));
-    throw new ApiError(response.status, body.detail || response.statusText);
+    const detail = body.detail || response.statusText;
+    log.error("%s %s failed: %d %s", method, path, response.status, detail);
+    throw new ApiError(response.status, detail);
   }
   if (response.status === 204) return undefined as T;
   return response.json();

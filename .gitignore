@@ -32,6 +32,9 @@ package-lock.json
 # Claude Code
 .claude/
 
+# Logs
+backend/logs/
+
 # Env
 .env
 .env.local

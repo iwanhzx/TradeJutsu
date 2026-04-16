@@ -69,6 +69,7 @@ def _fetch_yfinance_intraday(symbol: str, interval: str) -> pd.DataFrame:
 
 
 async def fetch_daily(symbol: str) -> None:
+    logger.info("Fetching daily prices for %s", symbol)
     loop = asyncio.get_running_loop()
     raw = await loop.run_in_executor(None, _fetch_yfinance_daily, symbol)
 
@@ -103,6 +104,7 @@ async def fetch_daily(symbol: str) -> None:
     ])
 
     await repo.upsert_daily(df)
+    logger.info("Stored %d daily rows for %s", len(df), symbol)
 
     last_row = df.tail(1)
     if len(last_row) > 0:
@@ -116,6 +118,7 @@ async def fetch_daily(symbol: str) -> None:
 
 
 async def fetch_intraday(symbol: str, interval: str) -> None:
+    logger.info("Fetching %s prices for %s", interval, symbol)
     loop = asyncio.get_running_loop()
     raw = await loop.run_in_executor(None, _fetch_yfinance_intraday, symbol, interval)
 
@@ -155,6 +158,7 @@ async def fetch_intraday(symbol: str, interval: str) -> None:
     ])
 
     await repo.upsert_intraday(df)
+    logger.info("Stored %d %s rows for %s", len(df), interval, symbol)
     await notify_data_updated("prices_intraday", symbol)
 
 

@@ -1,4 +1,7 @@
+import { createLogger } from "./logger";
 import type { WsMessage } from "../types/api";
+
+const log = createLogger("wsClient");
 
 type MessageHandler = (message: WsMessage) => void;
 
@@ -15,17 +18,21 @@ class WebSocketClient {
     if (this.ws?.readyState === WebSocket.OPEN) return;
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const host = import.meta.env.DEV ? "localhost:8000" : window.location.host;
-    this.ws = new WebSocket(`${protocol}//${host}/api/v1/ws`);
+    const url = `${protocol}//${host}/api/v1/ws`;
+    log.info("WebSocket connecting to %s", url);
+    this.ws = new WebSocket(url);
 
-    this.ws.onopen = () => { this._isConnected = true; this._notifyStatus(); };
+    this.ws.onopen = () => { this._isConnected = true; this._notifyStatus(); log.info("WebSocket connected"); };
     this.ws.onmessage = (event) => {
       try {
         const message: WsMessage = JSON.parse(event.data);
         this.handlers.forEach((handler) => handler(message));
-      } catch { /* ignore */ }
+      } catch (err) {
+        log.warn("Failed to parse WebSocket message:", event.data, err);
+      }
     };
-    this.ws.onclose = () => { this._isConnected = false; this._notifyStatus(); this._scheduleReconnect(); };
-    this.ws.onerror = () => { this.ws?.close(); };
+    this.ws.onclose = () => { this._isConnected = false; this._notifyStatus(); log.info("WebSocket closed, reconnecting in 3s"); this._scheduleReconnect(); };
+    this.ws.onerror = () => { log.error("WebSocket error"); this.ws?.close(); };
   }
 
   disconnect() {

@@ -43,6 +43,7 @@ def compute_wilder_atr(true_ranges: list[float], period: int) -> list[float]:
 async def calculate_atr(interval: str) -> None:
     symbols = await symbols_repo.get_all()
     active = [s for s in symbols if s.get("is_active", True)]
+    logger.info("Calculating ATR for interval=%s across %d symbols", interval, len(active))
     now = datetime.now(timezone.utc).isoformat()
 
     results = []
@@ -118,6 +119,7 @@ async def calculate_atr(interval: str) -> None:
     if results:
         df = pl.DataFrame(results)
         await repo.upsert_atr_summary(df)
+        logger.info("ATR calculation complete: %d results stored", len(results))
         await notify_data_updated("atr_summary")
 
 

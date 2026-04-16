@@ -4,12 +4,15 @@ Uses aiosqlite for async compatibility with FastAPI.
 WAL mode enabled for concurrent read/write.
 """
 
+import logging
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 import aiosqlite
 
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 _db_path: str = str(settings.sqlite_path)
@@ -27,6 +30,7 @@ async def get_db() -> AsyncGenerator[aiosqlite.Connection, None]:
 
 
 async def init_schema() -> None:
+    logger.info("Initializing SQLite schema at %s (WAL mode)", _db_path)
     async with get_db() as db:
         await db.execute("PRAGMA journal_mode=WAL")
         await db.execute("PRAGMA busy_timeout=5000")

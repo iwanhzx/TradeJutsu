@@ -1,4 +1,7 @@
-import { Component, type ReactNode } from "react";
+import { Component, type ErrorInfo, type ReactNode } from "react";
+import { createLogger } from "../lib/logger";
+
+const log = createLogger("ErrorBoundary");
 
 interface Props { children: ReactNode; fallback?: ReactNode; }
 interface State { hasError: boolean; error: Error | null; }
@@ -6,6 +9,9 @@ interface State { hasError: boolean; error: Error | null; }
 export class ErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false, error: null };
   static getDerivedStateFromError(error: Error) { return { hasError: true, error }; }
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    log.error("React render error:", error.message, errorInfo.componentStack);
+  }
   render() {
     if (this.state.hasError) {
       return this.props.fallback || (

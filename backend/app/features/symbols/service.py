@@ -28,9 +28,11 @@ def _fetch_yfinance_info(symbol: str) -> dict:
 async def add_symbol(symbol: str) -> dict:
     if await repo.exists(symbol):
         raise SymbolAlreadyExistsError(symbol)
+    logger.info("Adding symbol %s", symbol)
     loop = asyncio.get_running_loop()
     info = await loop.run_in_executor(None, _fetch_yfinance_info, symbol)
     result = await repo.insert(symbol, info["name"], info["sector"], info["currency"])
+    logger.info("Symbol %s added (name=%s)", symbol, info["name"])
     return result
 
 
@@ -56,6 +58,7 @@ async def enable_symbol(symbol: str) -> dict:
 
 
 async def delete_symbol(symbol: str) -> None:
+    logger.info("Deleting symbol %s and all associated data", symbol)
     await get_symbol(symbol)
     await duckdb_manager.write("DELETE FROM prices_daily WHERE symbol = ?", [symbol])
     await duckdb_manager.write("DELETE FROM prices_intraday WHERE symbol = ?", [symbol])

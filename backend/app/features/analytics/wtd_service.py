@@ -24,6 +24,7 @@ TURNOVER_THRESHOLD = 50_000_000_000
 async def evaluate_wtd() -> list[dict]:
     symbols = await symbols_repo.get_all()
     active = [s for s in symbols if s.get("is_active", True)]
+    logger.info("Evaluating WTD for %d active symbols", len(active))
 
     atr_df = await repo.get_atr_summary()
     results = []
@@ -92,6 +93,8 @@ async def evaluate_wtd() -> list[dict]:
             "atr_conditions_met": conditions,
         })
 
+    wtd_count = sum(1 for r in results if r["is_worth_trade_daily"])
+    logger.info("WTD evaluation complete: %d/%d symbols qualified", wtd_count, len(results))
     await notify_data_updated("symbols")
     return results
 
