@@ -41,7 +41,10 @@ def _execute_read_polars(query: str, params: list | None = None) -> pl.DataFrame
             result = conn.execute(query, params)
         else:
             result = conn.execute(query)
-        return result.pl()
+        try:
+            return result.pl()
+        except Exception:
+            return pl.DataFrame()
     finally:
         conn.close()
 

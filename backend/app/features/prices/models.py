@@ -1,9 +1,11 @@
+import datetime
+
 from pydantic import BaseModel
 
 
 class PriceDailyResponse(BaseModel):
     symbol: str
-    date: str
+    date: datetime.date
     open: float | None = None
     high: float | None = None
     low: float | None = None
@@ -16,7 +18,7 @@ class PriceDailyResponse(BaseModel):
 
 class PriceIntradayResponse(BaseModel):
     symbol: str
-    datetime: str
+    datetime: datetime.datetime
     interval: str
     open: float | None = None
     high: float | None = None
